@@ -1,5 +1,7 @@
 ﻿namespace Play.Inventory.Contracts;
 
+using System;
+
 /// <summary>
 /// Event for granting items
 /// </summary>
