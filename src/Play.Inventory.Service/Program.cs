@@ -23,7 +23,7 @@ builder
     .Services.AddMongo()
     .AddMongoRepository<InventoryItem>("inventoryitems")
     .AddMongoRepository<CatalogItem>("catalogitems")
-    .AddMassTransitWithRabbitMq(retryConfigurator =>
+    .AddMassTransitWithMessageBroker(configuration, retryConfigurator =>
     {
         retryConfigurator.Interval(3, TimeSpan.FromSeconds(5));
         retryConfigurator.Ignore(typeof(UnknownItemException)); // will not retry but move on if it fails
