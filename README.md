@@ -16,7 +16,8 @@ dotnet nuget push ../packages/Play.Inventory.Contracts.$version.nupkg --api-key 
 ```powershell
 $env:GH_OWNER="play-economy-microservices"
 $env:GH_PAT="[PAT HERE]"
-docker build --secret id=GH_OWNER --secret id=GH_PAT -t play.inventory:$version .
+$appname="playeconomycontainerregistry"
+docker build --secret id=GH_OWNER --secret id=GH_PAT -t "$appname.azurecr.io/play.inventory:$version" .
 ```
 
 ## Run the docker image
@@ -25,4 +26,12 @@ $cosmosDbConnString="[CONN STRING HERE]"
 $serviceBusConnString="[CONN STRING HERE]"
 docker run -it --rm -p 5004:5004 --name inventory -e MongoDBSettings__ConnectionString=$cosmosDbConnString -e ServiceBusSettings__ConnectionString=$serviceBusConnString -e
 ServiceSettings__MessageBroker="SERVICEBUS" play.inventory:$version
+```
+
+## Publish the Docker image
+```powershell
+$appname="playeconomycontainerregistry"
+$version="1.0.2"
+az acr login --name $appname
+docker push "$appname.azurecr.io/play.inventory:$version"
 ```
