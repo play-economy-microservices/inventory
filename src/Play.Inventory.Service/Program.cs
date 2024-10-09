@@ -1,5 +1,6 @@
 using GreenPipes;
 using MassTransit;
+using Play.Common.Configuration;
 using Play.Common.HealthChecks;
 using Play.Common.Identity;
 using Play.Common.MassTransit;
@@ -15,6 +16,9 @@ var builder = WebApplication.CreateBuilder(args);
 const string AllowedOriginSetting = "AllowedOrigin";
 
 IConfiguration configuration = builder.Configuration;
+
+// Configure Azure Keyvault to obtain secrets
+builder.Host.ConfigureAzureKeyVault();
 
 // Add services to the container.
 // Register and build the custom Mongo Database
