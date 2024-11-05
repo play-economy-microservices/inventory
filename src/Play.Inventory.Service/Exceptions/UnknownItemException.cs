@@ -1,14 +1,17 @@
-﻿using System.Runtime.Serialization;
+using System;
+using System.Runtime.Serialization;
 
-namespace Play.Inventory.Service.Consumers;
-
-[Serializable]
-internal class UnknownItemException : Exception
+namespace Play.Inventory.Service.Exceptions
 {
-    public UnknownItemException(Guid ItemId) : base($"Unknown item '{ItemId}'")
+    [Serializable]
+    internal class UnknownItemException : Exception
     {
-        this.ItemId = ItemId;
-    }
+        public UnknownItemException(Guid itemId) : 
+            base($"Unknown item '{itemId}'")
+        {
+            this.ItemId = itemId;
+        }
 
-    public Guid ItemId { get; }
+        public Guid ItemId { get; }
+    }
 }

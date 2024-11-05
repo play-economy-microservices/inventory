@@ -1,24 +1,24 @@
-﻿
-using System;
-using static Play.Inventory.Service.Dtos;
+using System.Collections.Generic;
+using System.Net.Http;
+using System.Net.Http.Json;
+using System.Threading.Tasks;
+using Play.Inventory.Service.Dtos;
 
-namespace Play.Inventory.Service.Clients;
-
-/// <summary>
-/// Class that handles invoking the REST Api from the Catalog Microservice.
-/// </summary>
-public class CatalogClient
+namespace Play.Inventory.Service.Clients
 {
-	private readonly HttpClient httpClient;
+    public class CatalogClient
+    {
+        private readonly HttpClient httpClient;
 
-	public CatalogClient(HttpClient httpClient)
-	{
-		this.httpClient = httpClient;
-	}
+        public CatalogClient(HttpClient httpClient)
+        {
+            this.httpClient = httpClient;
+        }
 
-	public async Task<IReadOnlyCollection<CatalogItemDto>> GetCatalogItemsAsync()
-	{
-		var items = await httpClient.GetFromJsonAsync<IReadOnlyCollection<CatalogItemDto>>("/items");
-        return items;
-	}
+        public async Task<IReadOnlyCollection<CatalogItemDto>> GetCatalogItemsAsync()
+        {
+            var items = await httpClient.GetFromJsonAsync<IReadOnlyCollection<CatalogItemDto>>("/items");
+            return items;
+        }
+    }
 }

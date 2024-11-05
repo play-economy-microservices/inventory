@@ -1,69 +1,57 @@
-﻿using System.Linq.Expressions;
+using System;
+using System.Threading.Tasks;
 using MassTransit;
 using Play.Common;
 using Play.Inventory.Contracts;
 using Play.Inventory.Service.Entities;
-using static Play.Inventory.Service.Dtos;
+using Play.Inventory.Service.Exceptions;
 
-namespace Play.Inventory.Service.Consumers;
-
-public class SubtractItemsConsumer : IConsumer<SubtractItems>
+namespace Play.Inventory.Service.Consumers
 {
-    /// <summary>
-    /// This is a referenece to the MongoDatabase Collection
-    /// </summary>
-    private readonly IRepository<InventoryItem> inventoryItemsRepository;
-
-    /// <summary>
-    /// This is a referenece to the MongoDatabase Collection
-    /// </summary>
-    private readonly IRepository<CatalogItem> catalogItemsRepository;
-
-    public SubtractItemsConsumer(IRepository<InventoryItem> inventoryItemsRepository, IRepository<CatalogItem> catalogItemsRepository)
+    public class SubtractItemsConsumer : IConsumer<SubtractItems>
     {
-        this.inventoryItemsRepository = inventoryItemsRepository;
-        this.catalogItemsRepository = catalogItemsRepository;
-    }
+        private readonly IRepository<InventoryItem> inventoryItemsRepository;
+        private readonly IRepository<CatalogItem> catalogItemsRepository;
 
-    // First, check if the item exists in the db, if so, grab the item and subtract the quantity that was requested initially.
-    public async Task Consume(ConsumeContext<SubtractItems> context)
-    {
-        var message = context.Message;
-
-        var item = await catalogItemsRepository.GetAsync(message.CatalogItemId);
-
-        if (item is null)
+        public SubtractItemsConsumer(IRepository<InventoryItem> inventoryItemsRepository, IRepository<CatalogItem> catalogItemsRepository)
         {
-            throw new UnknownItemException(message.CatalogItemId);
+            this.inventoryItemsRepository = inventoryItemsRepository;
+            this.catalogItemsRepository = catalogItemsRepository;
         }
 
-        // Check the item exists and subtract the quantity that was requested
-        Expression<Func<InventoryItem, bool>> filter =
-            item => item.UserId == message.UserId && item.CatalogItemId == message.CatalogItemId;
-
-        var inventoryItem = await inventoryItemsRepository.GetAsync(filter);
-
-        if (inventoryItem is not null)
+        public async Task Consume(ConsumeContext<SubtractItems> context)
         {
-            // Avoid duplicate messages
-            if (inventoryItem.MessageIds.Contains(context.MessageId.Value))
+            var message = context.Message;
+
+            var item = await catalogItemsRepository.GetAsync(message.CatalogItemId);
+
+            if (item == null)
             {
-                await context.Publish(new InventoryItemsSubtracted(message.CorrelationId));
-                return;
+                throw new UnknownItemException(message.CatalogItemId);
             }
 
-            // Undo the quantity that was requested
-            inventoryItem.Quantity -= message.Quantity;
+            var inventoryItem = await inventoryItemsRepository.GetAsync(
+                item => item.UserId == message.UserId && item.CatalogItemId == message.CatalogItemId);
 
-            // attach the MessageId from the message header to check for duplicate messages
-            inventoryItem.MessageIds.Add(context.MessageId.Value);
+            if (inventoryItem != null)
+            {
+                if (inventoryItem.MessageIds.Contains(context.MessageId.Value))
+                {
+                    await context.Publish(new InventoryItemsSubtracted(message.CorrelationId));
+                    return;
+                }
 
-            await inventoryItemsRepository.UpdateAsync(inventoryItem);
+                inventoryItem.Quantity -= message.Quantity;
+                inventoryItem.MessageIds.Add(context.MessageId.Value);
+                await inventoryItemsRepository.UpdateAsync(inventoryItem);
 
-            // Publish messages for Trading Service
-            await context.Publish(new InventoryItemUpdated(inventoryItem.UserId, inventoryItem.CatalogItemId, inventoryItem.Quantity));
+                await context.Publish(new InventoryItemUpdated(
+                    inventoryItem.UserId,
+                    inventoryItem.CatalogItemId,
+                    inventoryItem.Quantity));
+            }
+
+            await context.Publish(new InventoryItemsSubtracted(message.CorrelationId));
         }
-
-        await context.Publish(new InventoryItemsSubtracted(message.CorrelationId));
     }
 }
