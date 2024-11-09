@@ -64,3 +64,26 @@ $AKS_OIDC_ISSUER=az aks show -n $appname -g $appname --query "oidcIssuerProfile.
 az identity federated-credential create --name $namespace --identity-name $namespace
 --resource-group $appname --issuer $AKS_OIDC_ISSUER --subject "system:serviceaccount:${namespace}:${namespace}-serviceaccount"
 ```
+
+## Install the Helm Chart
+
+```powershell
+$appname="playeconomyacr"
+$namespace="inventory"
+
+$helmUser=[guid]::Empty.Guid
+$helmPassword=az acr login --name $appname --expose-token --output tsv --query accessToken
+
+# This is no longer needed after Helm v3.8.0
+
+$env:HELM_EXPERIMENTAL_OCI=1
+
+# authenticate
+
+helm registry login "$appname.azurecr.io" --username $helmUser --password $helmPassword
+
+# Install the Helm Chart from ACR with inventory Values
+
+$chartVersion="0.1.0"
+helm upgrade inventory-service oci://$appname.azurecr.io/helm/microservice --version $chartVersion -f ./helm/values.yaml -n $namespace --install
+```
