@@ -1,6 +1,6 @@
 using System;
 using System.Net.Http;
-using GreenPipes;
+using MassTransit;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
