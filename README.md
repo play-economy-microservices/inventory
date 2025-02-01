@@ -1,6 +1,5 @@
-# play.inventory
+# Inventory
 
-Play Economy Inventory microservice
 
 ## Add the GitHub package source
 
